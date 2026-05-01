@@ -61,7 +61,7 @@ user: "99:100"
 ## Unraid
 
 1. Create a folder for config, e.g. `/mnt/user/appdata/subarr`.
-2. **Docker Compose** (Unraid 6.12+): add a stack, paste a variant of [docker-compose.yml](docker-compose.yml), set the bind mount to your appdata path, set the host port under **Settings** for the stack (e.g. map `8787:3001`).
+2. **Docker Compose** (Unraid 6.12+): add a stack, paste a variant of [docker-compose.yml](docker-compose.yml), set the bind mount to your appdata path, set the host port under **Settings** for the stack (e.g. map `7979:3001`).
 3. **Custom Docker** (web UI):  
    - **Repository**: your image from GHCR (after CI publishes), e.g. `ghcr.io/<your-username>/subarr:master`, or build locally and reference `subarr:local`.  
    - **Port**: map a host port to container `3001`.  
@@ -110,7 +110,7 @@ Webhook post-processors do not need yt-dlp. If you prefer to run **yt-dlp on the
 
 ## Unraid Community Applications template
 
-Import [unraid/subarr.xml](unraid/subarr.xml) as a user template (or paste into **Docker → Add Container → Click here to import**). Replace `YOUR_GITHUB_USERNAME` in **Repository** with the account that publishes your GHCR image. Default paths: appdata `/mnt/user/appdata/subarr`, downloads `/mnt/user/Youtube`, Web UI host port **7979**. To also listen on **7980**, add another **Port** mapping `7980` → `3001` in the Unraid container form.
+Import [unraid/my-subarr.xml](unraid/my-subarr.xml) as a user template (or paste into **Docker → Add Container → Click here to import**). Default paths: appdata `/mnt/user/appdata/subarr`, downloads `/mnt/user/Youtube`, single Web UI mapping **7979** → container **3001**.
 
 ## Prebuilt images (GitHub Container Registry)
 

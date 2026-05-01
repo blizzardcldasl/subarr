@@ -3,7 +3,6 @@ services:
     build: .
     image: subarr:local
     ports:
-      # Host 7979 → app; use 7980 on the host only if you run a second mapping or reverse proxy (see unraid/subarr.xml)
       - "7979:3001"
     environment:
       PORT: "3001"

@@ -1,11 +1,16 @@
 #!/bin/sh
 set -e
+PUID=${PUID:-1000}
+PGID=${PGID:-1000}
+
 if [ -n "${SUBARR_DB_PATH}" ]; then
   dir=$(dirname "${SUBARR_DB_PATH}")
   mkdir -p "$dir"
-  chown node:node "$dir" || chown -R node:node "$dir"
+  chown -R "$PUID:$PGID" "$dir" 2>/dev/null || true
 fi
-# Writable output root for yt-dlp post-processors (bind-mount your Unraid share here → /downloads)
 mkdir -p /downloads
-chown node:node /downloads 2>/dev/null || true
-exec runuser -u node -- node server/index.js
+chown -R "$PUID:$PGID" /downloads 2>/dev/null || true
+chown -R "$PUID:$PGID" /app/server /app/client/build 2>/dev/null || true
+
+# Drop to PUID/PGID (Unraid defaults 99:100 = nobody:users). setpriv is in util-linux on bookworm-slim.
+exec setpriv --reuid="$PUID" --regid="$PGID" --clear-groups -- node server/index.js
