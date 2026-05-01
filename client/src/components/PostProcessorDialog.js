@@ -13,6 +13,29 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
   ];
 
   const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [ytDlpDefaults, setYtDlpDefaults] = useState({
+    mergeFormat: 'mkv',
+    perPlaylistFolder: true,
+    includeDate: true,
+  });
+
+  const buildYtDlpArgs = () => {
+    const merge = ytDlpDefaults.mergeFormat === 'mp4' ? 'mp4' : 'mkv';
+    const outPath = ytDlpDefaults.perPlaylistFolder
+      ? `/downloads/[[playlist.title_fs]]/[[video.title_fs]]${ytDlpDefaults.includeDate ? '_[[video.published_date]]' : ''}.%(ext)s`
+      : `/downloads/[[playlist.title_fs]]_[[video.title_fs]]${ytDlpDefaults.includeDate ? '_[[video.published_date]]' : ''}.%(ext)s`;
+    return `-f "bestvideo*+bestaudio/best" --merge-output-format ${merge} --no-mtime --no-playlist -o "${outPath}" https://www.youtube.com/watch?v=[[video.video_id]]`;
+  };
+
+  const applyYtDlpDefaultsToArgs = () => {
+    if (!postProcessorData)
+      return;
+    setPostProcessorData({
+      ...postProcessorData,
+      args: buildYtDlpArgs(),
+    });
+  };
+
   const templates = {
     'Discord': {
       type: 'webhook',
@@ -56,7 +79,7 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
 }`
       },
     },
-    'yt-dlp (per-playlist folder, title_date)': {
+    'yt-dlp (recommended defaults)': {
       type: 'process',
       target: '/usr/local/bin/yt-dlp',
       data: {
@@ -101,6 +124,14 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
       ...templateData.data,
       headers: Object.entries(templateData.data.headers || {}).map(([name, value]) => ({ name, value })),
     });
+
+    if (templateName.startsWith('yt-dlp')) {
+      setYtDlpDefaults({
+        mergeFormat: 'mkv',
+        perPlaylistFolder: true,
+        includeDate: true,
+      });
+    }
   };
 
   const constructFinalWebhook = () => {
@@ -257,12 +288,62 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
           </select>
         </div>
         <div className='setting flex-column-mobile'>
-          <div style={{minWidth: 175}}>{postProcessor?.type === 'webhook' ? 'URL' : 'File path'}</div>
+          <div style={{minWidth: 175}}>{postProcessor?.type === 'webhook' ? 'URL' : 'Command'}</div>
           <input type="text"
             value={postProcessor?.target}
             onChange={e => setPostProcessor({...postProcessor, target: e.target.value})}
           />
         </div>
+        {postProcessor?.type === 'process' && (
+          <p style={{marginTop: 0, marginBottom: 10, fontStyle: 'italic', opacity: 0.9}}>
+            Set <b>Command</b> to the executable inside the container (example: <code>/usr/local/bin/yt-dlp</code>), then put everything after it in <b>Arguments</b>.
+          </p>
+        )}
+        {postProcessor?.type === 'process' && (postProcessor?.target || '').includes('yt-dlp') && (
+          <div className='setting flex-column-mobile' style={{marginTop: -4}}>
+            <div style={{minWidth: 175}}>yt-dlp defaults</div>
+            <div style={{display: 'flex', flexDirection: 'column', gap: 8, width: '100%'}}>
+              <div style={{display: 'flex', gap: 10, flexWrap: 'wrap'}}>
+                <label style={{display: 'flex', gap: 6, alignItems: 'center'}}>
+                  <span style={{minWidth: 110}}>Container</span>
+                  <select
+                    value={ytDlpDefaults.mergeFormat}
+                    onChange={e => setYtDlpDefaults({...ytDlpDefaults, mergeFormat: e.target.value})}>
+                    <option value="mkv">MKV (recommended)</option>
+                    <option value="mp4">MP4</option>
+                  </select>
+                </label>
+                <label style={{display: 'flex', gap: 6, alignItems: 'center'}}>
+                  <span style={{minWidth: 110}}>Folders</span>
+                  <select
+                    value={ytDlpDefaults.perPlaylistFolder ? 'per-playlist' : 'flat'}
+                    onChange={e => setYtDlpDefaults({...ytDlpDefaults, perPlaylistFolder: e.target.value === 'per-playlist'})}>
+                    <option value="per-playlist">Per playlist</option>
+                    <option value="flat">Flat</option>
+                  </select>
+                </label>
+                <label style={{display: 'flex', gap: 6, alignItems: 'center'}}>
+                  <span style={{minWidth: 110}}>Filename</span>
+                  <select
+                    value={ytDlpDefaults.includeDate ? 'title_date' : 'title_only'}
+                    onChange={e => setYtDlpDefaults({...ytDlpDefaults, includeDate: e.target.value === 'title_date'})}>
+                    <option value="title_date">Title + date</option>
+                    <option value="title_only">Title only</option>
+                  </select>
+                </label>
+              </div>
+              <div style={{display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap'}}>
+                <button style={{backgroundColor: 'cornflowerblue', borderRadius: 5, padding: '6px 10px'}}
+                  onClick={() => applyYtDlpDefaultsToArgs()}>
+                  Apply defaults to Arguments
+                </button>
+                <div style={{fontSize: 'small', opacity: 0.9}}>
+                  Writes to <code>/downloads</code> using <code>[[playlist.title_fs]]</code>, <code>[[video.title_fs]]</code>, and <code>[[video.published_date]]</code>.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <PostProcessorDataUI 
           postProcessorData={postProcessorData}
           type={postProcessor?.type}
@@ -342,6 +423,9 @@ function PostProcessorDataUI({ postProcessorData, type, updateData, showVariable
               value={postProcessorData.args}
               onChange={e => updateData({...postProcessorData, args: e.target.value})}
             />
+            <div style={{width: 'calc(100% - 18px)', fontSize: 'small', opacity: 0.9, marginTop: 6}}>
+              Example (yt-dlp): <code>-o &quot;/downloads/[[playlist.title_fs]]/[[video.title_fs]]_[[video.published_date]].%(ext)s&quot; https://www.youtube.com/watch?v=[[video.video_id]]</code>
+            </div>
             <button style={{fontFamily: '"Caveat", cursive', fontSize: 'large'}} onClick={() => showVariablesDialog()}>
               <div>f(x)</div>
             </button>
