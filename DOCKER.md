@@ -110,7 +110,7 @@ Webhook post-processors do not need yt-dlp. If you prefer to run **yt-dlp on the
 
 ## Unraid Community Applications template
 
-Import [unraid/my-subarr.xml](unraid/my-subarr.xml) as a user template (or paste into **Docker → Add Container → Click here to import**). Default paths: appdata `/mnt/user/appdata/subarr`, downloads `/mnt/user/Youtube`, single Web UI mapping **7979** → container **3001**.
+Import [unraid/my-subarr.xml](unraid/my-subarr.xml) as a user template (or paste into **Docker → Add Container → Click here to import**). Default paths: appdata `/mnt/user/appdata/subarr`, downloads `/mnt/user/Youtube`, single Web UI mapping **7979** → container **3001**. The template uses Unraid’s `Config` elements for every setting (including PUID/PGID as `Type="Variable"`); the `WebUI` link uses `[PORT:7979]` to match the default **host** port, not the container port.
 
 ## Prebuilt images (GitHub Container Registry)
 
