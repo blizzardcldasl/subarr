@@ -24,6 +24,8 @@ To pull upstream changes: `git fetch upstream && git merge upstream/master` (or 
 | `PORT` | HTTP port inside the container (default `3001`). |
 | `NODE_ENV` | Set to `production` in the image. |
 | `SUBARR_DB_PATH` | Optional. Absolute path to the SQLite file (e.g. `/config/subarr.db`). Parent directory is created if needed. If unset, the database is `server/subarr.db` next to the app (not ideal for persistence unless you mount that path carefully). |
+| `SUBARR_LOG_DIR` | Optional. If set (e.g. `/config/logs`), mirrors `console.log` / `warn` / `error` to `subarr.log` in that folder. Set to `0` or `false` to disable file logging. |
+| `SUBARR_LOG_MAX_MB` | When `subarr.log` exceeds this size (default `10`), it is rotated to `subarr.previous.log`. |
 
 ## Build and run (local)
 

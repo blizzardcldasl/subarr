@@ -8,6 +8,8 @@ services:
       PORT: "3001"
       NODE_ENV: production
       SUBARR_DB_PATH: /config/subarr.db
+      SUBARR_LOG_DIR: /config/logs
+      SUBARR_LOG_MAX_MB: "10"
     volumes:
       # Unraid defaults — adjust for your machine
       - /mnt/user/appdata/subarr:/config

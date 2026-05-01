@@ -10,6 +10,10 @@ if [ -n "${SUBARR_DB_PATH}" ]; then
 fi
 mkdir -p /downloads
 chown -R "$PUID:$PGID" /downloads 2>/dev/null || true
+if [ -n "${SUBARR_LOG_DIR}" ]; then
+  mkdir -p "${SUBARR_LOG_DIR}"
+  chown -R "$PUID:$PGID" "${SUBARR_LOG_DIR}" 2>/dev/null || true
+fi
 chown -R "$PUID:$PGID" /app/server /app/client/build 2>/dev/null || true
 
 # Drop to PUID/PGID (Unraid defaults 99:100 = nobody:users). setpriv is in util-linux on bookworm-slim.

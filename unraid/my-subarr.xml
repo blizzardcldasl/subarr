@@ -11,7 +11,7 @@
   <Project>https://github.com/blizzardcldasl/subarr</Project>
   <Overview>Lightweight YouTube subscription follower (*arr-style UI). RSS polling, webhooks, and optional yt-dlp (best quality downloads to /downloads).&#xD;
 &#xD;
-Defaults on this template: appdata /mnt/user/appdata/subarr, downloads /mnt/user/Youtube, host Web UI 7979 → container 3001. Set PUID/PGID to match share ownership (99/100 = nobody/users on typical Unraid).&#xD;
+Defaults on this template: appdata /mnt/user/appdata/subarr, downloads /mnt/user/Youtube, host Web UI 7979 → container 3001. Logs (optional): SUBARR_LOG_DIR=/config/logs → subarr.log under appdata. Set PUID/PGID to match share ownership (99/100 = nobody/users on typical Unraid).&#xD;
 &#xD;
 No built-in authentication — use LAN only or put behind a reverse proxy with auth.</Overview>
   <Category>Downloaders: Other</Category>
@@ -41,4 +41,8 @@ The [PORT:7979] WebUI link uses this host port — keep them in sync." Type="Por
   <Config Name="PORT (internal HTTP)" Target="PORT" Default="3001" Mode="" Description="Port the Node server listens on inside the container. Must match the Web UI Port Target (3001) unless you rebuild the image with a different default." Type="Variable" Display="advanced" Required="true" Mask="false">3001</Config>
 
   <Config Name="NODE_ENV" Target="NODE_ENV" Default="production" Mode="" Description="Leave production for normal use." Type="Variable" Display="advanced" Required="true" Mask="false">production</Config>
+
+  <Config Name="SUBARR_LOG_DIR" Target="SUBARR_LOG_DIR" Default="/config/logs" Mode="" Description="Directory for subarr.log (and subarr.previous.log when rotated). Set to 0 or false to disable file logging (console only)." Type="Variable" Display="advanced" Required="false" Mask="false">/config/logs</Config>
+
+  <Config Name="SUBARR_LOG_MAX_MB" Target="SUBARR_LOG_MAX_MB" Default="10" Mode="" Description="Rotate subarr.log when size exceeds this many MB (keeps one backup file)." Type="Variable" Display="advanced" Required="false" Mask="false">10</Config>
 </Container>

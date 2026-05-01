@@ -85,7 +85,7 @@ async function tryParseAdditionalChannelData(url) {
 function getMeta() {
   return {
     versions: {
-      subarr: 1.2,
+      subarr: 1.3,
       node: process.version,
     },
   };

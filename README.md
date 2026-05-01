@@ -93,6 +93,8 @@ npm run start-server # On Windows, use 'npm run start-server-win'
 
 And if you'd like to set it to run at startup, put that last command into a .service file (Linux) or your Startup folder (Windows).
 
+For **Docker / Unraid**, file logging, post-processors (including yt-dlp), and day-to-day operation, see **[USER_MANUAL.md](USER_MANUAL.md)** and **[DOCKER.md](DOCKER.md)**.
+
 ### Plans for future maintenance
 
 I am currently just building this as a hobby project for myself and I already have about 10x the amount of hobby projects that I can handle. I'll probably fix some bugs or maintenance issues as they arise, but I don't plan to work on any major features. If you'd like to contribute, please reach out!
