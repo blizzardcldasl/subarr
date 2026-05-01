@@ -18,13 +18,12 @@ const dbPath = resolveDbPath();
 
 const db = new Database(dbPath);
 
-// Migration: migrate old db schemas
-// const existingColumns = db.prepare(`PRAGMA table_info(playlists);`).all();
-// const columnNames = new Set(existingColumns.map(col => col.name));
-
-// if (!columnNames.has('banner')) {
-//   db.prepare(`ALTER TABLE playlists ADD COLUMN banner TEXT;`).run();
-// }
+// Migration: add newer columns for existing installs.
+const existingVideoColumns = db.prepare(`PRAGMA table_info(videos);`).all();
+const videoColumnNames = new Set(existingVideoColumns.map(col => col.name));
+if (!videoColumnNames.has('downloaded_at')) {
+  db.prepare(`ALTER TABLE videos ADD COLUMN downloaded_at TEXT;`).run();
+}
 
 // Initialization: create tables if they don't exist
 db.exec(`
@@ -49,6 +48,7 @@ CREATE TABLE IF NOT EXISTS videos (
   title TEXT,
   published_at TEXT,
   thumbnail TEXT,
+  downloaded_at TEXT,
   UNIQUE (playlist_id, video_id)  -- Unique by both playlist_id & video_id (since the same video could exist on multiple playlists)
 );
 

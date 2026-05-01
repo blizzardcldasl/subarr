@@ -1,7 +1,7 @@
 const { parseVideosFromFeed } = require('./rssParser');
 const { runPostProcessor } = require('./postProcessors');
 const { fetchWithRetry, tryParseAdditionalChannelData } = require('./utils');
-const { getPostProcessors, getSettings, insertActivity, insertPlaylist, getPlaylists, deletePlaylist, updatePlaylist } = require('./dbQueries');
+const { getPostProcessors, getSettings, insertActivity, insertPlaylist, getPlaylists, deletePlaylist, updatePlaylist, markVideoDownloaded } = require('./dbQueries');
 
 const pollingJobs = new Map(); // Map of playlistId -> { intervalId, intervalMinutes, regex }
 
@@ -140,6 +140,10 @@ async function pollPlaylist(playlist, alertForNewVideos = true, initialBackfillC
           await runPostProcessor(postProcessor.type, postProcessor.target, postProcessor.data, { video, playlist });
           const elapsedMs = Date.now() - t0;
           console.log(`[PostProcessor] Completed '${postProcessor.name}' in ${elapsedMs}ms`);
+
+          if (postProcessor.type === 'process' && video.video_id) {
+            markVideoDownloaded(playlist.playlist_id, video.video_id);
+          }
   
           insertActivity(playlist.playlist_id, video.title, null, `Post processor '${postProcessor.name}' run`, postProcessor.type === 'webhook' ? 'broadcast' : 'cpu-fill');
         }

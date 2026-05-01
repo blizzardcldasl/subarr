@@ -9,6 +9,7 @@ function AddPlaylistPage() {
 
   const [playlistInput, setPlaylistInput] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [error, setError] = useState('');
 
@@ -56,23 +57,33 @@ function AddPlaylistPage() {
   }, [playlistInput]);  
 
   const handleSubmit = async () => {
+    if (!playlistInfo || isSubmitting)
+      return;
+
+    setIsSubmitting(true);
     setError('');
-    const res = await fetch('/api/playlists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 'playlistId': playlistInfo.playlist_id })
-    });
-
-    if (res.ok) {
-      showToast('Playlist added!', 'success');
-      setPlaylistInput('');
-
-      const data = await res.json();
-      navigate(`/playlist/${data.id}`); //Navigate to new playlist page (NOTE: this is a little different than Sonarr - Sonarr doesn't go anywhere after adding a show)
+    try {
+      showToast('Submitting playlist...', 'info');
+      const res = await fetch('/api/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'playlistId': playlistInfo.playlist_id })
+      });
+  
+      if (res.ok) {
+        showToast('Playlist added!', 'success');
+        setPlaylistInput('');
+  
+        const data = await res.json();
+        navigate(`/playlist/${data.id}`); //Navigate to new playlist page (NOTE: this is a little different than Sonarr - Sonarr doesn't go anywhere after adding a show)
+      }
+      else {
+        const addError = await getErrorResponse(res);
+        showToast(`Error adding playlist: ${addError}`, 'error');
+      }
     }
-    else {
-      const addError = await getErrorResponse(res);
-      showToast(`Error adding playlist: ${addError}`, 'error');
+    finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -107,9 +118,10 @@ function AddPlaylistPage() {
             </button>
           </div>
           <button 
-            style={{marginTop: 'auto', marginLeft: 'auto', backgroundColor: 'var(--success-color)', padding: '6px 16px', borderRadius: 4, fontSize: 'medium'}}
+            style={{marginTop: 'auto', marginLeft: 'auto', backgroundColor: isSubmitting ? '#666' : 'var(--success-color)', padding: '6px 16px', borderRadius: 4, fontSize: 'medium', minWidth: 90}}
+            disabled={isSubmitting}
             onClick={() => handleSubmit()}>
-            Add
+            {isSubmitting ? 'Adding...' : 'Add'}
           </button>
           {/* Todo: maybe in the future clicking on this 'card' pops up a dialog where you can customize check_interval_minutes and stuff when adding */}
         </div>

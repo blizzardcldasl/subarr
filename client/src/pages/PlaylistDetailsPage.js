@@ -199,18 +199,53 @@ function PlaylistDetailsPage() {
                   <Thumbnail src={video.thumbnail} placeholder='https://placehold.co/160x90?text=No+Thumbnail'/>
                 </a>
                 <div style={{ display: 'flex', flexDirection: 'column', padding: '10px' }}>
-                  <div style={{ 
-                    fontSize: '1em',
-                    fontWeight: 'bold',
-                    color: testingRegex ? new RegExp(regex, 'i').test(video.title) ? 'var(--success-color)' : 'var(--danger-color)' : 'inherit',
-                    // The below styles limit the title to two lines on small screens & truncate the title with an ellipsis (...)
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>
-                    {video.title}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ 
+                      fontSize: '1em',
+                      fontWeight: 'bold',
+                      color: testingRegex ? new RegExp(regex, 'i').test(video.title) ? 'var(--success-color)' : 'var(--danger-color)' : 'inherit',
+                      // The below styles limit the title to two lines on small screens & truncate the title with an ellipsis (...)
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {video.title}
+                    </div>
+                    {video.downloaded_at ? (
+                      <span
+                        title={`Downloaded ${new Date(video.downloaded_at).toLocaleString()}`}
+                        style={{
+                          alignSelf: 'flex-start',
+                          marginLeft: 'auto',
+                          backgroundColor: 'var(--success-color)',
+                          color: '#fff',
+                          borderRadius: 999,
+                          padding: '2px 8px',
+                          fontSize: '0.7em',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Downloaded
+                      </span>
+                    ) : (
+                      <span
+                        title='No successful process download recorded yet'
+                        style={{
+                          alignSelf: 'flex-start',
+                          marginLeft: 'auto',
+                          backgroundColor: '#555',
+                          color: '#fff',
+                          borderRadius: 999,
+                          padding: '2px 8px',
+                          fontSize: '0.7em',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Not downloaded
+                      </span>
+                    )}
                   </div>
                   <div style={{flex: 1}}/>
                   <div style={{ fontSize: '0.75em', color: '#aaa', marginTop: '4px' }}>

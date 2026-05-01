@@ -21,6 +21,7 @@ const {
   insertSettings,
   getPostProcessors,
   insertPostProcessor,
+  updatePostProcessor,
   deletePostProcessor,
   getVideosForPlaylist
 } = require('./dbQueries');
@@ -250,7 +251,7 @@ app.put('/api/postprocessors/:id', (req, res) => {
   if (!name || !type || !target || !data)
     return res.status(400).json({ error: 'Missing fields' });
 
-  const result = updatePostProcessor(name, type, target, data, req.params.id);
+  const result = updatePostProcessor(req.params.id, name, type, target, data);
 
   if (result.changes === 0)
     return res.status(404).json({ error: 'Not found' });

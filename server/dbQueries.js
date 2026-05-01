@@ -95,6 +95,14 @@ function deleteVideosForPlaylist(playlistId) {
   db.prepare('DELETE FROM videos WHERE playlist_id = ?').run(playlistId);
 }
 
+function markVideoDownloaded(playlistId, videoId, downloadedAt = new Date().toISOString()) {
+  return db.prepare(`
+    UPDATE videos
+    SET downloaded_at = ?
+    WHERE playlist_id = ? AND video_id = ?
+  `).run(downloadedAt, playlistId, videoId);
+}
+
 function getSettings() {
   // Todo: we should do the "string to bool" conversion here, rather than having the "SQLite can't store bool" comments elsewhere
   return db.prepare('SELECT key, value FROM settings').all();
@@ -165,6 +173,7 @@ module.exports = {
   deletePlaylist,
   getVideosForPlaylist,
   insertVideo,
+  markVideoDownloaded,
   deleteVideosForPlaylist,
   getSettings,
   insertSettings,
