@@ -116,6 +116,7 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
 
     setPostProcessor({
       ...postProcessor, //Expanding this allows us to keep the id & name (if we're editing an already-existing post processor)
+      name: postProcessor?.name || templateName,
       type: templateData.type,
       target: templateData.target,
     });
@@ -266,13 +267,18 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
             <select
               style={{marginTop: 0}}
               value={selectedTemplate}
-              onChange={e => setSelectedTemplate(e.target.value)}>
+              onChange={e => {
+                const template = e.target.value;
+                setSelectedTemplate(template);
+                applyTemplate(template);
+              }}>
               {[''].concat(Object.keys(templates)).map(template =>
                 <option key={template} value={template}>{template}</option>
               )}
             </select>
             <button style={{backgroundColor: 'cornflowerblue', marginLeft: 10, borderRadius: 5, width: 40}}
-              onClick={() => applyTemplate(selectedTemplate)}>
+              onClick={() => applyTemplate(selectedTemplate)}
+              title="Apply selected template">
               <i style={{fontSize: 'x-large'}} className="bi bi-check"/>
             </button>
           </div>
@@ -334,7 +340,17 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
               </div>
               <div style={{display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap'}}>
                 <button style={{backgroundColor: 'cornflowerblue', borderRadius: 5, padding: '6px 10px'}}
-                  onClick={() => applyYtDlpDefaultsToArgs()}>
+                  onClick={() => {
+                    if ((postProcessor?.target || '') === '') {
+                      setPostProcessor({
+                        ...postProcessor,
+                        type: 'process',
+                        target: '/usr/local/bin/yt-dlp',
+                        name: postProcessor?.name || 'yt-dlp (recommended defaults)',
+                      });
+                    }
+                    applyYtDlpDefaultsToArgs();
+                  }}>
                   Apply defaults to Arguments
                 </button>
                 <div style={{fontSize: 'small', opacity: 0.9}}>

@@ -89,22 +89,27 @@ async function updateYtSubsPlaylists() {
   }
 }
 
-async function pollPlaylist(playlist, alertForNewVideos = true) {
+async function pollPlaylist(playlist, alertForNewVideos = true, initialBackfillCount = 0, options = {}) {
+  const { force = false } = options;
   const now = Date.now();
   const lastChecked = playlist.last_checked ? new Date(playlist.last_checked).getTime() : 0;
   const intervalMs = (playlist.check_interval_minutes || 60) * 60 * 1000;
 
-  if (now - lastChecked < intervalMs)
-    return;
+  if (!force && now - lastChecked < intervalMs)
+    return { skippedInterval: true, processed: 0, initialBackfilled: 0 };
 
   console.log(`[Poll] Checking: ${playlist.title} (${playlist.playlist_id})`);
 
   try {
     const settings = Object.fromEntries(getSettings().map(row => [row.key, row.value]));
     const exclude_shorts = (settings.exclude_shorts ?? 'false') === 'true'; // SQLite can't store bool
+    let initialBackfilled = 0;
+    let processed = 0;
 
     await parseVideosFromFeed(playlist.playlist_id, null, async (video, alreadyExists) => {
-      if (alreadyExists || !alertForNewVideos)
+      const shouldBackfill = alreadyExists && initialBackfilled < initialBackfillCount;
+      const shouldProcess = !alreadyExists || shouldBackfill;
+      if (!shouldProcess || (!alertForNewVideos && !shouldBackfill))
         return;
 
       // Optional regex filter
@@ -118,12 +123,23 @@ async function pollPlaylist(playlist, alertForNewVideos = true) {
         return;
       }
 
-      console.log(`New video found: ${video.title}`);
-      insertActivity(playlist.playlist_id, video.title, `https://www.youtube.com/watch?v=${video.video_id}`, 'New video found!', 'camera-video-fill');
+      if (shouldBackfill) {
+        initialBackfilled += 1;
+        console.log(`Initial backfill video found: ${video.title}`);
+        insertActivity(playlist.playlist_id, video.title, `https://www.youtube.com/watch?v=${video.video_id}`, 'Initial video found (manual add)', 'camera-video-fill');
+      }
+      else {
+        console.log(`New video found: ${video.title}`);
+        insertActivity(playlist.playlist_id, video.title, `https://www.youtube.com/watch?v=${video.video_id}`, 'New video found!', 'camera-video-fill');
+      }
 
       for (const postProcessor of getPostProcessors()) {
         try {
+          const t0 = Date.now();
+          console.log(`[PostProcessor] Starting '${postProcessor.name}' (${postProcessor.type}) for '${video.title}'`);
           await runPostProcessor(postProcessor.type, postProcessor.target, postProcessor.data, { video, playlist });
+          const elapsedMs = Date.now() - t0;
+          console.log(`[PostProcessor] Completed '${postProcessor.name}' in ${elapsedMs}ms`);
   
           insertActivity(playlist.playlist_id, video.title, null, `Post processor '${postProcessor.name}' run`, postProcessor.type === 'webhook' ? 'broadcast' : 'cpu-fill');
         }
@@ -131,13 +147,23 @@ async function pollPlaylist(playlist, alertForNewVideos = true) {
           console.error(`Error running post processor '${postProcessor.name}':`, error); // Todo: should an error like this become an 'activity item' as well? (Sonarr would probably call this a "health issue")
         }
       }
+      processed += 1;
     });
 
+    if (initialBackfillCount > 0) {
+      console.log(`[Poll] Initial backfill complete for '${playlist.title}': ${initialBackfilled}/${initialBackfillCount} item(s) triggered`);
+      if (initialBackfilled === 0) {
+        insertActivity(playlist.playlist_id, playlist.title, `https://www.youtube.com/playlist?list=${playlist.playlist_id}`, 'Initial backfill found no eligible items', 'info-circle');
+      }
+    }
+
     updatePlaylist(playlist.playlist_id, undefined, undefined, new Date().toISOString());
+    return { skippedInterval: false, processed, initialBackfilled };
   }
   catch (err) {
     console.error(`Failed to poll ${playlist.title}:`, err); // Todo: mark as 'health issue'? (eg a 404 will be thrown when a playlist is deleted)
+    return { skippedInterval: false, processed: 0, initialBackfilled: 0 };
   }
 }
 
-module.exports = { schedulePolling, removePolling, updateYtSubsPlaylists };
+module.exports = { schedulePolling, removePolling, updateYtSubsPlaylists, pollPlaylist };

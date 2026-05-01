@@ -17,9 +17,11 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
 }
 
 async function runCommand(command, args) {
+  const started = Date.now();
   console.log(`Launching command '${command}' with args '${args}'`);
   return new Promise((resolve, reject) => {
     const child = spawn(command, parseArgs(args));
+    console.log(`[Process] Spawned pid=${child.pid ?? 'unknown'} command='${command}'`);
 
     let stdout = '';
     let stderr = '';
@@ -34,15 +36,35 @@ async function runCommand(command, args) {
     });
 
     child.on('close', code => {
+      const elapsedMs = Date.now() - started;
+      const stdoutTrimmed = stdout.trim();
+      const stderrTrimmed = stderr.trim();
+      const stdoutPreview = stdoutTrimmed.slice(-500);
+      const stderrPreview = stderrTrimmed.slice(-500);
       if (code === 0) {
+        console.log(`[Process] Completed pid=${child.pid ?? 'unknown'} exit=0 in ${elapsedMs}ms stdout_bytes=${stdout.length} stderr_bytes=${stderr.length}`);
+        if (stdoutPreview) {
+          console.log(`[Process] stdout tail:\n${stdoutPreview}`);
+        }
+        if (stderrPreview) {
+          console.warn(`[Process] stderr tail:\n${stderrPreview}`);
+        }
         resolve(stdout.trim());
       }
       else {
-        reject(new Error(`Process exited with code ${code}:\n${stderr.trim()}`));
+        console.error(`[Process] Failed pid=${child.pid ?? 'unknown'} exit=${code} in ${elapsedMs}ms stdout_bytes=${stdout.length} stderr_bytes=${stderr.length}`);
+        if (stdoutPreview) {
+          console.error(`[Process] stdout tail:\n${stdoutPreview}`);
+        }
+        if (stderrPreview) {
+          console.error(`[Process] stderr tail:\n${stderrPreview}`);
+        }
+        reject(new Error(`Process exited with code ${code}:\n${stderrTrimmed || 'No stderr output'}`));
       }
     });
 
     child.on('error', err => {
+      console.error(`[Process] Failed to start command '${command}': ${err.message}`);
       reject(new Error(`Failed to start process: ${err.message}`));
     });
   });

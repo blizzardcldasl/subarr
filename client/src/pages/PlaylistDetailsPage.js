@@ -12,6 +12,7 @@ function PlaylistDetailsPage() {
   const [regex, setRegex] = useState('');
   const [videos, setVideos] = useState([]);
   const [testingRegex, setTestingRegex] = useState(false);
+  const [runningBackfill, setRunningBackfill] = useState(false);
 
   useEffect(() => {
     fetch(`/api/playlists/${id}`)
@@ -71,6 +72,40 @@ function PlaylistDetailsPage() {
     }
   };  
 
+  const handleRunBackfill = async () => {
+    const input = window.prompt('Run backfill for how many recent items? (1-50)', '15');
+    if (input === null)
+      return;
+
+    const count = parseInt(input, 10);
+    if (!Number.isFinite(count) || count < 1 || count > 50) {
+      showToast('Please enter a number between 1 and 50', 'error');
+      return;
+    }
+
+    setRunningBackfill(true);
+    try {
+      const res = await fetch(`/api/playlists/${id}/backfill`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count }),
+      });
+
+      if (!res.ok)
+        throw new Error('Failed to run backfill');
+
+      const data = await res.json();
+      showToast(`Backfill complete: ${data.initialBackfilled || 0}/${count} item(s) triggered`, 'success');
+    }
+    catch (err) {
+      console.error(err);
+      showToast('Error running backfill', 'error');
+    }
+    finally {
+      setRunningBackfill(false);
+    }
+  };
+
   if (!playlist)
     return <p>Loading...</p>;
 
@@ -80,6 +115,10 @@ function PlaylistDetailsPage() {
         <button className='hover-blue' onClick={handleSave} title="Save Settings">
           <i className="bi bi-floppy-fill"></i>
           <div style={{ fontSize: 'small' }}>Save</div>
+        </button>
+        <button className='hover-blue' onClick={handleRunBackfill} title="Run backfill now" disabled={runningBackfill}>
+          <i className={`bi ${runningBackfill ? 'bi-hourglass-split' : 'bi-play-circle-fill'}`}></i>
+          <div style={{ fontSize: 'small' }}>{runningBackfill ? 'Running' : 'Run now'}</div>
         </button>
         <button className='hover-danger' onClick={handleDelete} title="Delete Playlist">
           <i className="bi bi-trash-fill"></i>

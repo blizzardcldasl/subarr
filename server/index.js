@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { parseVideosFromFeed } = require('./rssParser');
-const { schedulePolling, updateYtSubsPlaylists, removePolling } = require('./polling');
+const { schedulePolling, updateYtSubsPlaylists, removePolling, pollPlaylist } = require('./polling');
 const { runPostProcessor } = require('./postProcessors');
 const { tryParseAdditionalChannelData, getMeta } = require('./utils');
 const {
@@ -74,6 +74,8 @@ app.post('/api/playlists', async (req, res) => {
       // Fetch newly added playlist to pass into schedulePolling
       const newPlaylist = getPlaylist(playlistDbId);
       schedulePolling(newPlaylist);
+      // On manual add, run initial backfill items so process/webhook users get immediate feedback.
+      await pollPlaylist(newPlaylist, true, 15);
     });
 
     res.status(201).json({ id: playlistDbId });
@@ -95,6 +97,24 @@ app.get('/api/playlists/:id', (req, res) => {
 
   const videos = getVideosForPlaylist(playlist.playlist_id);
   res.json({ playlist, videos });
+});
+
+app.post('/api/playlists/:id/backfill', async (req, res) => {
+  const playlist = getPlaylist(req.params.id);
+  if (!playlist)
+    return res.status(404).json({ error: 'Not found' });
+
+  const countRaw = parseInt(req.body?.count ?? 15, 10);
+  const count = Number.isFinite(countRaw) ? Math.min(Math.max(countRaw, 1), 50) : 15;
+
+  try {
+    const result = await pollPlaylist(playlist, true, count, { force: true });
+    res.json({ success: true, ...result, requestedBackfillCount: count });
+  }
+  catch (err) {
+    console.error('Failed to run playlist backfill:', err);
+    res.status(500).json({ error: 'Failed to run backfill' });
+  }
 });
 
 app.put('/api/playlists/:id/settings', (req, res) => {

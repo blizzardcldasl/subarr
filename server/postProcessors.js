@@ -7,11 +7,13 @@ const { fetchWithRetry, runCommand } = require('./utils');
 */
 
 async function runPostProcessor(type, target, data, videoInfo) {
+  const processorLabel = `${type}:${target}`;
   if (type === 'webhook') {
     let { method = 'POST', headers = {}, body } = JSON.parse(data);
 
     target = replaceVariables(target, videoInfo, true);
     body = replaceVariables(body, videoInfo);
+    console.log(`[PostProcessor] webhook -> ${target} method=${method} (${processorLabel})`);
 
     const response = await fetchWithRetry(target, {
       method,
@@ -30,6 +32,7 @@ async function runPostProcessor(type, target, data, videoInfo) {
     let { args } = JSON.parse(data);
 
     args = replaceVariables(args, videoInfo);
+    console.log(`[PostProcessor] process -> ${target} (${processorLabel})`);
 
     return await runCommand(target, args); // Currently we're awaiting the process. This can be good for testing the postprocessor, but we might not want it when running it
   }
