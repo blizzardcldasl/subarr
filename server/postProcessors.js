@@ -38,6 +38,27 @@ async function runPostProcessor(type, target, data, videoInfo) {
   }
 }
 
+function sanitizeFilename(s) {
+  if (s == null || s === '')
+    return 'untitled';
+  let out = String(s)
+    .replace(/[\\/:*?"<>|'\x00-\x1f]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (out.length > 120)
+    out = out.slice(0, 120).trim();
+  return out || 'untitled';
+}
+
+function toPublishedDate(publishedAt) {
+  if (!publishedAt)
+    return 'unknown-date';
+  const d = new Date(publishedAt);
+  if (Number.isNaN(d.getTime()))
+    return 'unknown-date';
+  return d.toISOString().slice(0, 10);
+}
+
 function replaceVariables(text, videoInfo, urlsafe = false) {
   const example = { // Some services (eg Discord) won't accept the webhook unless we provide example data for the variables
     video: {
@@ -54,18 +75,31 @@ function replaceVariables(text, videoInfo, urlsafe = false) {
   const data = videoInfo || example;
 
   const replacements = {
-    '[[video.title]]': data.video.title,
-    '[[video.thumbnail]]': data.video.thumbnail,
-    '[[video.video_id]]': data.video.video_id,
-    '[[video.published_at]]': data.video.published_at,
-    '[[playlist.title]]': data.playlist.title,
+    '[[video.title]]': data.video?.title,
+    '[[video.thumbnail]]': data.video?.thumbnail,
+    '[[video.video_id]]': data.video?.video_id,
+    '[[video.published_at]]': data.video?.published_at,
+    '[[playlist.title]]': data.playlist?.title,
+    '[[playlist.title_fs]]': sanitizeFilename(data.playlist?.title),
+    '[[video.title_fs]]': sanitizeFilename(data.video?.title),
+    '[[video.published_date]]': toPublishedDate(data.video?.published_at),
   };
+
+  /** Keys safe for filenames / shell paths (no JSON-style escaping). */
+  const rawKeys = new Set([
+    '[[playlist.title_fs]]',
+    '[[video.title_fs]]',
+    '[[video.published_date]]',
+  ]);
 
   let result = text;
   for (const [key, value] of Object.entries(replacements)) {
     let replacement = value;
     if (urlsafe) {
       replacement = encodeURIComponent(value);
+    }
+    else if (rawKeys.has(key)) {
+      replacement = value == null ? '' : String(value);
     }
     else {
       // Escape properly for JSON strings

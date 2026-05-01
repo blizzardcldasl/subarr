@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container version="2">
+  <Beta>True</Beta>
+  <Category>Downloaders: Other</Category>
+  <Date>2026-05-01</Date>
+  <TemplateURL/>
+  <Icon/>
+  <Name>Subarr</Name>
+  <Repository>ghcr.io/YOUR_GITHUB_USERNAME/subarr:master</Repository>
+  <Registry/>
+  <Support>https://github.com/derekantrican/subarr/issues</Support>
+  <Project>https://github.com/derekantrican/subarr</Project>
+  <Overview>Lightweight YouTube subscription follower (*arr-style UI). RSS polling, webhooks, and optional yt-dlp downloads. Replace YOUR_GITHUB_USERNAME in Repository with your fork (or image you publish). Defaults: appdata /mnt/user/appdata/subarr, downloads /mnt/user/Youtube, Web UI port 7979. Add a second port 7980→3001 in the Unraid UI if you need two host ports. No built-in auth—use LAN or reverse proxy.</Overview>
+  <DonateText/>
+  <DonateLink/>
+  <WebUI>http://[IP]:[PORT:3001]/</WebUI>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <ExtraParams/>
+  <PostArgs/>
+  <DonateImg/>
+  <BaseImage/>
+  <Branch/>
+  <License>MIT</License>
+  <GitHub>https://github.com/derekantrican/subarr</GitHub>
+  <BindTime>true</BindTime>
+  <Banner/>
+  <Version>1</Version>
+  <Config Name="Web UI" Target="3001" Default="7979" Mode="tcp" Description="Subarr Web UI (add another Port 7980→3001 in Unraid if you need a second host port)" Type="Port" Display="always" Required="true" Mask="false">7979</Config>
+  <Config Name="Appdata" Target="/config" Default="/mnt/user/appdata/subarr" Mode="rw" Description="SQLite DB and config (SUBARR_DB_PATH=/config/subarr.db)" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/subarr</Config>
+  <Config Name="Downloads" Target="/downloads" Default="/mnt/user/Youtube" Mode="rw" Description="yt-dlp output directory inside the container" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/Youtube</Config>
+  <Config Name="SUBARR_DB_PATH" Target="SUBARR_DB_PATH" Default="/config/subarr.db" Mode="" Description="SQLite file path" Type="Variable" Display="advanced" Required="true" Mask="false">/config/subarr.db</Config>
+  <Config Name="PORT" Target="PORT" Default="3001" Mode="" Description="Internal HTTP port (usually leave 3001)" Type="Variable" Display="advanced" Required="true" Mask="false">3001</Config>
+</Container>

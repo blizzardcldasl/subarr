@@ -56,11 +56,11 @@ function PostProcessorDialog({editingItem, onClose, onRefreshPostProcessors}) {
 }`
       },
     },
-    'yt-dlp': {
+    'yt-dlp (per-playlist folder, title_date)': {
       type: 'process',
-      target: 'PATH_TO_YT-DLP',
+      target: '/usr/local/bin/yt-dlp',
       data: {
-        args: `https://www.youtube.com/watch?v=[[video.video_id]] -o "[[playlist.title]]/%(title)s.%(ext)s"`,
+        args: `-f "bestvideo*+bestaudio/best" --merge-output-format mkv --no-mtime --no-playlist -o "/downloads/[[playlist.title_fs]]/[[video.title_fs]]_[[video.published_date]].%(ext)s" https://www.youtube.com/watch?v=[[video.video_id]]`,
       },
     },
     // More templates (eg Pushbullet, etc) can be added here as requested
@@ -353,12 +353,15 @@ function PostProcessorDataUI({ postProcessorData, type, updateData, showVariable
 }
 
 function VariablesDialog({isOpen, onClose}) {
-  const possibleVariables = [ // Todo: might want to support more variables (eg a version of 'published_at' that is human-readable)
+  const possibleVariables = [
     ['[[video.title]]', 'Video title'],
     ['[[video.thumbnail]]', 'Video thumbnail url'],
     ['[[video.video_id]]', 'Video YouTube id'],
     ['[[video.published_at]]', 'Video published timestamp (ISO 8601)'],
-    ['[[playlist.title]]', 'Title of source playlist'],
+    ['[[video.published_date]]', 'Video date for filenames (YYYY-MM-DD)'],
+    ['[[video.title_fs]]', 'Video title with unsafe path characters stripped'],
+    ['[[playlist.title]]', 'Title of source playlist (subscription / playlist name)'],
+    ['[[playlist.title_fs]]', 'Playlist title sanitized for filenames'],
   ]
 
   return (

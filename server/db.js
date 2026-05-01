@@ -2,10 +2,19 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// Always use subarr.db from the server folder (and support youtubarr.db if it still exists from before the app rename)
-const dbPath = fs.existsSync(path.join(__dirname, 'youtubarr.db')) 
-  ? path.join(__dirname, 'youtubarr.db')
-  : path.join(__dirname, 'subarr.db');
+// Default: subarr.db in the server folder (or youtubarr.db if left over from the rename).
+// SUBARR_DB_PATH overrides for Docker (e.g. mount /config and set SUBARR_DB_PATH=/config/subarr.db).
+function resolveDbPath() {
+  if (process.env.SUBARR_DB_PATH) {
+    const p = path.resolve(process.env.SUBARR_DB_PATH);
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    return p;
+  }
+  const legacy = path.join(__dirname, 'youtubarr.db');
+  return fs.existsSync(legacy) ? legacy : path.join(__dirname, 'subarr.db');
+}
+
+const dbPath = resolveDbPath();
 
 const db = new Database(dbPath);
 
